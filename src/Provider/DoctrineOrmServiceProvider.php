@@ -5,8 +5,8 @@ use Silex\Application;
 use Silex\ServiceProviderInterface;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Mapping\Driver\DriverChain;
 use Doctrine\ORM\Mapping\Driver\YamlDriver;
+use Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain;
 use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\Common\Cache\RedisCache;
 use Doctrine\Common\Cache\ApcCache;
@@ -94,7 +94,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                 $config->setQueryCacheImpl($app['orm.cache.factory']($options, 'query'));
                 $config->setResultCacheImpl($app['orm.cache.factory']($options, 'result'));
 
-                $chain = new DriverChain();
+                $chain = new MappingDriverChain();
                 array_map(function ($mapping) use ($config, $chain) {
                     if (!is_array($mapping)) {
                         throw new \InvalidArgumentException();
@@ -102,8 +102,14 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
                     switch ($mapping['type']) {
                         case 'annotation':
-                            $useSimpleAnnotationReader = isset($mapping['use_simple_annotation_reader']) ? $mapping['use_simple_annotation_reader'] : true;
-                            $driver = $config->newDefaultAnnotationDriver($mapping['path'], $useSimpleAnnotationReader);
+                            $useSimpleAnnotationReader = isset($mapping['use_simple_annotation_reader'])
+                                ? $mapping['use_simple_annotation_reader']
+                                : true;
+
+                            $driver = $config->newDefaultAnnotationDriver(
+                                $mapping['path'],
+                                $useSimpleAnnotationReader
+                            );
                             break;
                         case 'yml':
                             $driver = new YamlDriver($mapping['path']);
@@ -165,11 +171,14 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
         $app['orm.cache.redis'] = $app->protect(function ($options) {
             if (empty($options['host']) || empty($options['port'])) {
-                throw new \RuntimeException();
+                throw new \RuntimeException('You must specify "host" and "port" for Redis.');
             }
 
             $redis = new \Redis();
             $redis->connect($options['host'], $options['port']);
+            if (isset($options['password'])) {
+                $redis->auth($options['password']);
+            }
             $cache = new RedisCache();
             $cache->setRedis($redis);
             return $cache;

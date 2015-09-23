@@ -41,15 +41,6 @@ class DoctrineOrmServiceProviderTest extends WebTestCase
         $app->register(new DoctrineOrmServiceProvider());
         $app['orm.proxy_namespace'] = 'Proxy';
         $app['orm.proxy_dir'] = __DIR__;
-        $app['orm.options'] = [
-            'mappings' => [
-                [
-                    'type' => 'annotation',
-                    'namespace' => 'Foo\Entity',
-                    'path' => __DIR__
-                ]
-            ]
-        ];
         $app['ems.options'] = [
             'sqlite1' => [
                 'driver' => 'pdo_sqlite',
