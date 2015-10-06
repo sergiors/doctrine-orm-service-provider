@@ -59,7 +59,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
         $app['ems'] = $app->share(function (Application $app) {
             $app['ems.options.initializer']();
 
-            $ems = new \Pimple();
+            $container = new \Pimple();
             foreach ($app['ems.options'] as $name => $options) {
                 if ($app['ems.default'] === $name) {
                     $config = $app['orm.config'];
@@ -70,18 +70,20 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                 $connection = $app['dbs'][$options['connection']];
                 $manager = $app['dbs.event_manager'][$options['connection']];
 
-                $ems[$name] = $ems->share(function ($ems) use ($connection, $config, $manager) {
-                    return EntityManager::create($connection, $config, $manager);
-                });
+                $container[$name] = $container->share(
+                    function () use ($connection, $config, $manager) {
+                        return EntityManager::create($connection, $config, $manager);
+                    }
+                );
             }
 
-            return $ems;
+            return $container;
         });
 
         $app['ems.config'] = $app->share(function (Application $app) {
             $app['ems.options.initializer']();
 
-            $configs = new \Pimple();
+            $container = new \Pimple();
             foreach ($app['ems.options'] as $name => $options) {
                 $config = new Configuration();
                 $config->setProxyDir($app['orm.proxy_dir']);
@@ -90,48 +92,19 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                 $config->setCustomStringFunctions($app['orm.custom_functions_string']);
                 $config->setCustomNumericFunctions($app['orm.custom_functions_numeric']);
                 $config->setCustomDatetimeFunctions($app['orm.custom_functions_datetime']);
-                $config->setMetadataCacheImpl($app['orm.cache.factory']($options, 'metadata'));
-                $config->setQueryCacheImpl($app['orm.cache.factory']($options, 'query'));
-                $config->setResultCacheImpl($app['orm.cache.factory']($options, 'result'));
-
-                $chain = new MappingDriverChain();
-                array_map(function ($mapping) use ($config, $chain) {
-                    if (!is_array($mapping)) {
-                        throw new \InvalidArgumentException();
-                    }
-
-                    switch ($mapping['type']) {
-                        case 'annotation':
-                            $useSimpleAnnotationReader = isset($mapping['use_simple_annotation_reader'])
-                                ? $mapping['use_simple_annotation_reader']
-                                : true;
-
-                            $driver = $config->newDefaultAnnotationDriver(
-                                $mapping['path'],
-                                $useSimpleAnnotationReader
-                            );
-                            break;
-                        case 'yml':
-                            $driver = new YamlDriver($mapping['path']);
-                            break;
-                        default:
-                            throw new \InvalidArgumentException();
-                            break;
-                    }
-
-                    $chain->addDriver($driver, $mapping['namespace']);
-                    return $driver;
-                }, $options['mappings']);
-
-                $config->setMetadataDriverImpl($chain);
-                $configs[$name] = $config;
+                $config->setMetadataCacheImpl($app['orm.cache.factory']('metadata', $options));
+                $config->setQueryCacheImpl($app['orm.cache.factory']('query', $options));
+                $config->setResultCacheImpl($app['orm.cache.factory']('result', $options));
+                $config->setMetadataDriverImpl($app['orm.mapping.chain']($config, $options['mappings']));
+                $container[$name] = $config;
             }
 
-            return $configs;
+            return $container;
         });
 
-        $app['orm.cache.factory'] = $app->protect(function ($options, $type) use ($app) {
-            $type = $type.'_cache';
+        $app['orm.cache.factory'] = $app->protect(function ($type, $options) use ($app) {
+            $type = $type.'_cache_driver';
+
             if (!isset($options[$type])) {
                 $options[$type] = 'array';
             }
@@ -155,10 +128,42 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                 case 'xcache':
                     return $app['orm.cache.xcache']();
                     break;
-                default:
-                    throw new \RuntimeException();
-                    break;
             }
+
+            throw new \RuntimeException();
+        });
+
+        $app['orm.mapping.chain'] = $app->protect(function (Configuration $config, array $mappings) {
+            $chain = new MappingDriverChain();
+
+            foreach ($mappings as $mapping) {
+                if (!is_array($mapping)) {
+                    throw new \InvalidArgumentException();
+                }
+
+                switch ($mapping['type']) {
+                    case 'annotation':
+                        $useSimpleAnnotationReader = isset($mapping['use_simple_annotation_reader'])
+                            ? $mapping['use_simple_annotation_reader']
+                            : true;
+
+                        $driver = $config->newDefaultAnnotationDriver(
+                            $mapping['path'],
+                            $useSimpleAnnotationReader
+                        );
+                        break;
+                    case 'yml':
+                        $driver = new YamlDriver($mapping['path']);
+                        break;
+                    default:
+                        throw new \InvalidArgumentException();
+                        break;
+                }
+
+                $chain->addDriver($driver, $mapping['namespace']);
+            }
+
+            return $chain;
         });
 
         $app['orm.cache.array'] = $app->protect(function () {
@@ -176,9 +181,11 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
             $redis = new \Redis();
             $redis->connect($options['host'], $options['port']);
+
             if (isset($options['password'])) {
                 $redis->auth($options['password']);
             }
+
             $cache = new RedisCache();
             $cache->setRedis($redis);
             return $cache;
