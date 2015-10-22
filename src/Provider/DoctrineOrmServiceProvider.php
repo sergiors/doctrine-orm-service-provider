@@ -15,6 +15,12 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 {
     public function register(Application $app)
     {
+        if (!isset($app['cache'])) {
+            throw new \LogicException(
+                'You must register the DoctrineCacheServiceProvider to use the DoctrineOrmServiceProvider.'
+            );
+        }
+
         $app['orm.proxy_dir'] = null;
         $app['orm.proxy_namespace'] = 'Proxy';
         $app['orm.auto_generate_proxy_classes'] = true;
