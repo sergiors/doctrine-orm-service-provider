@@ -117,7 +117,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                 ];
             }
 
-            return $app['cache.factory']($options[$type]);
+            return $app['cache.factory']($options[$type], $options);
         });
 
         $app['orm.mapping.chain'] = $app->protect(function (Configuration $config, array $mappings) {
