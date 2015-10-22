@@ -116,8 +116,8 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                     'driver' => $options[$type]
                 ];
             }
-
-            return $app['cache.factory']($options[$type], $options);
+            
+            return $app['cache.factory']($options[$type]['driver'], $options);
         });
 
         $app['orm.mapping.chain'] = $app->protect(function (Configuration $config, array $mappings) {
