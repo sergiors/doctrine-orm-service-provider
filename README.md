@@ -12,7 +12,11 @@ How to use
 ----------
 Something like this
 ```php
-$app->register(Inbep\Silex\Provider\DoctrineOrmServiceProvider(), [
+use Inbep\Silex\Provider\DoctrineOrmServiceProvider();
+use Inbep\Silex\Provider\DoctrineCacheServiceProvider();
+
+$app->register(new DoctrineCacheServiceProvider());
+$app->register(new DoctrineOrmServiceProvider(), [
     'orm.proxy_dir' => '',
     'orm.proxy_namespace' => ''
 ]);

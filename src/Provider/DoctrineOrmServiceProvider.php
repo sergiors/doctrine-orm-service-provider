@@ -7,10 +7,6 @@ use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\Driver\YamlDriver;
 use Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain;
-use Doctrine\Common\Cache\ArrayCache;
-use Doctrine\Common\Cache\RedisCache;
-use Doctrine\Common\Cache\ApcCache;
-use Doctrine\Common\Cache\XcacheCache;
 
 /**
  * @author Sérgio Rafael Siqueira <sergio@inbep.com.br>
@@ -117,16 +113,16 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
             switch ($options[$type]['driver']) {
                 case 'array':
-                    return $app['orm.cache.array']();
+                    return $app['cache.array']();
                     break;
                 case 'apc':
-                    return $app['orm.cache.apc']();
+                    return $app['cache.apc']();
                     break;
                 case 'redis':
-                    return $app['orm.cache.redis']($options);
+                    return $app['cache.redis']($options);
                     break;
                 case 'xcache':
-                    return $app['orm.cache.xcache']();
+                    return $app['cache.xcache']();
                     break;
             }
 
@@ -164,35 +160,6 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             }
 
             return $chain;
-        });
-
-        $app['orm.cache.array'] = $app->protect(function () {
-            return new ArrayCache();
-        });
-
-        $app['orm.cache.apc'] = $app->protect(function () {
-            return new ApcCache();
-        });
-
-        $app['orm.cache.redis'] = $app->protect(function ($options) {
-            if (empty($options['host']) || empty($options['port'])) {
-                throw new \RuntimeException('You must specify "host" and "port" for Redis.');
-            }
-
-            $redis = new \Redis();
-            $redis->connect($options['host'], $options['port']);
-
-            if (isset($options['password'])) {
-                $redis->auth($options['password']);
-            }
-
-            $cache = new RedisCache();
-            $cache->setRedis($redis);
-            return $cache;
-        });
-
-        $app['orm.cache.xcache'] = $app->protect(function () {
-            return new XcacheCache();
         });
 
         // shortcuts for the "first" ORM

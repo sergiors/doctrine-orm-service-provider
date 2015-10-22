@@ -4,6 +4,8 @@ namespace Inbep\Silex\Provider;
 use Silex\Application;
 use Silex\WebTestCase;
 use Silex\Provider\DoctrineServiceProvider;
+use Inbep\Silex\Provider\DoctrineCacheServiceProvider;
+
 
 class DoctrineOrmServiceProviderTest extends WebTestCase
 {
@@ -14,6 +16,7 @@ class DoctrineOrmServiceProviderTest extends WebTestCase
     {
         $app = $this->createApplication();
         $app->register(new DoctrineServiceProvider());
+        $app->register(new DoctrineCacheServiceProvider());
         $app->register(new DoctrineOrmServiceProvider());
         $app['orm.proxy_namespace'] = 'Proxy';
         $app['orm.proxy_dir'] = __DIR__;
@@ -38,6 +41,7 @@ class DoctrineOrmServiceProviderTest extends WebTestCase
     {
         $app = $this->createApplication();
         $app->register(new DoctrineServiceProvider());
+        $app->register(new DoctrineCacheServiceProvider());
         $app->register(new DoctrineOrmServiceProvider());
         $app['orm.proxy_namespace'] = 'Proxy';
         $app['orm.proxy_dir'] = __DIR__;
