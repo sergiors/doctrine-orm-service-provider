@@ -117,22 +117,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                 ];
             }
 
-            switch ($options[$type]['driver']) {
-                case 'array':
-                    return $app['cache.array']();
-                    break;
-                case 'apc':
-                    return $app['cache.apc']();
-                    break;
-                case 'redis':
-                    return $app['cache.redis']($options);
-                    break;
-                case 'xcache':
-                    return $app['cache.xcache']();
-                    break;
-            }
-
-            throw new \RuntimeException();
+            return $app['cache.factory']($options[$type]);
         });
 
         $app['orm.mapping.chain'] = $app->protect(function (Configuration $config, array $mappings) {
