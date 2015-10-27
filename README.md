@@ -5,7 +5,7 @@ Doctrine Orm Service Provider
 Install
 -------
 ```bash
-composer install inbep/doctrine-orm-service-provider
+composer install inbep/doctrine-orm-service-provider "dev-master"
 ```
 
 How to use

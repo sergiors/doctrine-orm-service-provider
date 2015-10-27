@@ -15,12 +15,6 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 {
     public function register(Application $app)
     {
-        if (!isset($app['cache'])) {
-            throw new \LogicException(
-                'You must register the DoctrineCacheServiceProvider to use the DoctrineOrmServiceProvider.'
-            );
-        }
-
         $app['orm.proxy_dir'] = null;
         $app['orm.proxy_namespace'] = 'Proxy';
         $app['orm.auto_generate_proxy_classes'] = true;
@@ -105,6 +99,12 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
         });
 
         $app['orm.cache.factory'] = $app->protect(function ($type, $options) use ($app) {
+            if (!isset($app['cache'])) {
+                throw new \LogicException(
+                    'You must register the DoctrineCacheServiceProvider to use the DoctrineOrmServiceProvider'
+                );
+            }
+
             $type = $type.'_cache_driver';
 
             if (!isset($options[$type])) {
@@ -116,7 +116,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                     'driver' => $options[$type]
                 ];
             }
-            
+
             return $app['cache.factory']($options[$type]['driver'], $options);
         });
 
