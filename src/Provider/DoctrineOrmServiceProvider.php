@@ -15,16 +15,11 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 {
     public function register(Application $app)
     {
-        $app['orm.proxy_dir'] = null;
-        $app['orm.proxy_namespace'] = 'Proxy';
-        $app['orm.auto_generate_proxy_classes'] = true;
-        $app['orm.custom_functions_string'] = [];
-        $app['orm.custom_functions_numeric'] = [];
-        $app['orm.custom_functions_datetime'] = [];
-        $app['orm.default_options'] = [
-            'connection' => 'default',
-            'mappings' => []
-        ];
+        if (!isset($app['dbs'])) {
+            throw new \LogicException(
+                'You must register the DoctrineServiceProvider to use the DoctrineOrmServiceProvider'
+            );
+        }
 
         $app['ems.options.initializer'] = $app->protect(function () use ($app) {
             static $initialized = false;
@@ -152,6 +147,17 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
             return $chain;
         });
+
+        $app['orm.proxy_dir'] = null;
+        $app['orm.proxy_namespace'] = 'Proxy';
+        $app['orm.auto_generate_proxy_classes'] = true;
+        $app['orm.custom_functions_string'] = [];
+        $app['orm.custom_functions_numeric'] = [];
+        $app['orm.custom_functions_datetime'] = [];
+        $app['orm.default_options'] = [
+            'connection' => 'default',
+            'mappings' => []
+        ];
 
         // shortcuts for the "first" ORM
         $app['orm'] = $app->share(function (Application $app) {
