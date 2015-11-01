@@ -1,5 +1,5 @@
 {
-  "name": "inbep/doctrine-orm-service-provider",
+  "name": "sergiors/doctrine-orm-service-provider",
   "description": "Doctrine ORM for Silex",
   "license": "MIT",
   "authors": [
@@ -12,11 +12,11 @@
     "php": ">=5.5",
     "silex/silex": "~1.2",
     "doctrine/orm": "~2.5",
-    "inbep/doctrine-cache-service-provider": "dev-master"
+    "sergiors/doctrine-cache-service-provider": "dev-master"
   },
   "autoload": {
     "psr-4": {
-      "Inbep\\Silex\\": "src"
+      "Sergiors\\Silex\\": "src"
     }
   },
   "require-dev": {
