@@ -1,11 +1,11 @@
 Doctrine Orm Service Provider
 -----------------------------
-[![Build Status](https://travis-ci.org/inbep/doctrine-orm-service-provider.svg?branch=master)](https://travis-ci.org/inbep/doctrine-orm-service-provider)
+[![Build Status](https://travis-ci.org/sergiors/doctrine-orm-service-provider.svg?branch=master)](https://travis-ci.org/inbep/doctrine-orm-service-provider)
 
 Install
 -------
 ```bash
-composer install inbep/doctrine-orm-service-provider "dev-master"
+composer install sergiors/doctrine-orm-service-provider "dev-master"
 ```
 
 How to use
@@ -13,8 +13,8 @@ How to use
 Something like this
 ```php
 use Silex\Provider\DoctrineServiceProvider;
-use Inbep\Silex\Provider\DoctrineOrmServiceProvider();
-use Inbep\Silex\Provider\DoctrineCacheServiceProvider();
+use Sergiors\Silex\Provider\DoctrineOrmServiceProvider();
+use Sergiors\Silex\Provider\DoctrineCacheServiceProvider();
 
 $app->register(new DoctrineServiceProvider(), [
     // your db config
