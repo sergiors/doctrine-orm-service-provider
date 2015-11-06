@@ -21,7 +21,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             );
         }
 
-        if (!isset($app['cache'])) {
+        if (!isset($app['caches'])) {
             throw new \LogicException(
                 'You must register the DoctrineCacheServiceProvider to use the DoctrineOrmServiceProvider.'
             );
