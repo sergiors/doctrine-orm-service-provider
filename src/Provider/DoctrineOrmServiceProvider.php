@@ -17,7 +17,13 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
     {
         if (!isset($app['dbs'])) {
             throw new \LogicException(
-                'You must register the DoctrineServiceProvider to use the DoctrineOrmServiceProvider'
+                'You must register the DoctrineServiceProvider to use the DoctrineOrmServiceProvider.'
+            );
+        }
+
+        if (!isset($app['cache'])) {
+            throw new \LogicException(
+                'You must register the DoctrineCacheServiceProvider to use the DoctrineOrmServiceProvider.'
             );
         }
 
@@ -94,12 +100,6 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
         });
 
         $app['orm.cache.factory'] = $app->protect(function ($type, $options) use ($app) {
-            if (!isset($app['cache'])) {
-                throw new \LogicException(
-                    'You must register the DoctrineCacheServiceProvider to use the DoctrineOrmServiceProvider'
-                );
-            }
-
             $type = $type.'_cache_driver';
 
             if (!isset($options[$type])) {
@@ -112,7 +112,14 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                 ];
             }
 
-            return $app['cache.factory']($options[$type]['driver'], $options);
+            $driver = $options[$type]['driver'];
+            $namespace = isset($options[$type]['namespace'])
+                ? $options[$type]['namespace']
+                : null;
+
+            $cache = $app['cache.factory']($driver, $options);
+            $cache->setNamespace($namespace);
+            return $cache;
         });
 
         $app['orm.mapping.chain'] = $app->protect(function (Configuration $config, array $mappings) {
