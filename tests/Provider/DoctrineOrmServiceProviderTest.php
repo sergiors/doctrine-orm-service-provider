@@ -1,10 +1,12 @@
 <?php
 
-namespace Sergiors\Silex\Provider;
+namespace Sergiors\Silex\Tests\Provider;
 
 use Silex\Application;
 use Silex\WebTestCase;
 use Silex\Provider\DoctrineServiceProvider;
+use Sergiors\Silex\Provider\DoctrineCacheServiceProvider;
+use Sergiors\Silex\Provider\DoctrineOrmServiceProvider;
 
 class DoctrineOrmServiceProviderTest extends WebTestCase
 {
