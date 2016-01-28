@@ -1,10 +1,10 @@
 <?php
+
 namespace Sergiors\Silex\Provider;
 
 use Silex\Application;
 use Silex\WebTestCase;
 use Silex\Provider\DoctrineServiceProvider;
-use Sergiors\Silex\Provider\DoctrineCacheServiceProvider;
 
 class DoctrineOrmServiceProviderTest extends WebTestCase
 {
@@ -24,9 +24,9 @@ class DoctrineOrmServiceProviderTest extends WebTestCase
                 [
                     'type' => 'annotation',
                     'namespace' => 'Foo\Entity',
-                    'path' => __DIR__
-                ]
-            ]
+                    'path' => __DIR__,
+                ],
+            ],
         ];
 
         $orm = $app['orm'];
@@ -52,11 +52,11 @@ class DoctrineOrmServiceProviderTest extends WebTestCase
                     [
                         'type' => 'yml',
                         'namespace' => 'Bar\Entity',
-                        'path' => __DIR__
-                    ]
-                ]
+                        'path' => __DIR__,
+                    ],
+                ],
             ],
-            'sqlite2' => ['driver' => 'pdo_sqlite', 'path' => '/']
+            'sqlite2' => ['driver' => 'pdo_sqlite', 'path' => '/'],
         ];
 
         $orm = $app['orm'];
@@ -68,6 +68,7 @@ class DoctrineOrmServiceProviderTest extends WebTestCase
         $app = new Application();
         $app['debug'] = true;
         $app['exception_handler']->disable();
+
         return $app;
     }
 }

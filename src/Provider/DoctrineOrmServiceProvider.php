@@ -1,4 +1,5 @@
 <?php
+
 namespace Sergiors\Silex\Provider;
 
 use Silex\Application;
@@ -38,7 +39,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
             if (!isset($app['ems.options'])) {
                 $app['ems.options'] = [
-                    'default' => isset($app['orm.options']) ? $app['orm.options'] : []
+                    'default' => isset($app['orm.options']) ? $app['orm.options'] : [],
                 ];
             }
 
@@ -108,7 +109,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
             if (!is_array($options[$type])) {
                 $options[$type] = [
-                    'driver' => $options[$type]
+                    'driver' => $options[$type],
                 ];
             }
 
@@ -119,6 +120,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
             $cache = $app['cache.factory']($driver, $options);
             $cache->setNamespace($namespace);
+
             return $cache;
         });
 
@@ -163,7 +165,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
         $app['orm.custom_functions_datetime'] = [];
         $app['orm.default_options'] = [
             'connection' => 'default',
-            'mappings' => []
+            'mappings' => [],
         ];
 
         // shortcuts for the "first" ORM
