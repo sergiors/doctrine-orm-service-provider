@@ -2,8 +2,8 @@
 
 namespace Sergiors\Silex\Provider;
 
-use Silex\Application;
-use Silex\ServiceProviderInterface;
+use Pimple\Container;
+use Pimple\ServiceProviderInterface;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\Driver\YamlDriver;
@@ -14,7 +14,7 @@ use Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain;
  */
 class DoctrineOrmServiceProvider implements ServiceProviderInterface
 {
-    public function register(Application $app)
+    public function register(Container $app)
     {
         if (!isset($app['dbs'])) {
             throw new \LogicException(
@@ -54,10 +54,10 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             $app['ems.options'] = $tmp;
         });
 
-        $app['ems'] = $app->share(function (Application $app) {
+        $app['ems'] = function () use ($app) {
             $app['ems.options.initializer']();
 
-            $container = new \Pimple();
+            $container = new Container();
             foreach ($app['ems.options'] as $name => $options) {
                 if ($app['ems.default'] === $name) {
                     $config = $app['orm.config'];
@@ -68,20 +68,18 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                 $connection = $app['dbs'][$options['connection']];
                 $manager = $app['dbs.event_manager'][$options['connection']];
 
-                $container[$name] = $container->share(
-                    function () use ($connection, $config, $manager) {
-                        return EntityManager::create($connection, $config, $manager);
-                    }
-                );
+                $container[$name] = function () use ($connection, $config, $manager) {
+                    return EntityManager::create($connection, $config, $manager);
+                };
             }
 
             return $container;
-        });
+        };
 
-        $app['ems.config'] = $app->share(function (Application $app) {
+        $app['ems.config'] = function () use ($app) {
             $app['ems.options.initializer']();
 
-            $container = new \Pimple();
+            $container = new Container();
             foreach ($app['ems.options'] as $name => $options) {
                 $config = new Configuration();
                 $config->setProxyDir($app['orm.proxy_dir']);
@@ -98,7 +96,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             }
 
             return $container;
-        });
+        };
 
         $app['orm.cache.factory'] = $app->protect(function ($type, $options) use ($app) {
             $type = $type.'_cache_driver';
@@ -169,20 +167,16 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
         ];
 
         // shortcuts for the "first" ORM
-        $app['orm'] = $app->share(function (Application $app) {
+        $app['orm'] = function () use ($app) {
             $ems = $app['ems'];
 
             return $ems[$app['ems.default']];
-        });
+        };
 
-        $app['orm.config'] = $app->share(function (Application $app) {
+        $app['orm.config'] = function () use ($app) {
             $ems = $app['ems.config'];
 
             return $ems[$app['ems.default']];
-        });
-    }
-
-    public function boot(Application $app)
-    {
+        };
     }
 }
