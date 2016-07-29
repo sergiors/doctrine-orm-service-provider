@@ -43,18 +43,16 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                 ];
             }
 
-            $tmp = $app['ems.options'];
-            foreach ($tmp as $name => &$options) {
-                $options = array_replace($app['orm.default_options'], $options);
+            $app['ems.options'] = array_map(function ($options) use ($app) {
+                return array_replace($app['orm.default_options'], $options);
+            }, $app['ems.options']);
 
-                if (!isset($app['ems.default'])) {
-                    $app['ems.default'] = $name;
-                }
+            if (!isset($app['ems.default'])) {
+                $app['ems.default'] = array_keys(array_slice($app['ems.options'], 0, 1))[0];
             }
-            $app['ems.options'] = $tmp;
         });
 
-        $app['ems'] = function () use ($app) {
+        $app['ems'] = function (Container $app) {
             $app['ems.options.initializer']();
 
             $container = new Container();
@@ -76,7 +74,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             return $container;
         };
 
-        $app['ems.config'] = function () use ($app) {
+        $app['ems.config'] = function (Container $app) {
             $app['ems.options.initializer']();
 
             $container = new Container();
@@ -167,13 +165,13 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
         ];
 
         // shortcuts for the "first" ORM
-        $app['orm'] = function () use ($app) {
+        $app['orm'] = function (Container $app) {
             $ems = $app['ems'];
 
             return $ems[$app['ems.default']];
         };
 
-        $app['orm.config'] = function () use ($app) {
+        $app['orm.config'] = function (Container $app) {
             $ems = $app['ems.config'];
 
             return $ems[$app['ems.default']];
