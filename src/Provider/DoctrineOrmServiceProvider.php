@@ -114,7 +114,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                 ? $options[$type]['namespace']
                 : null;
 
-            $cache = $app['cache.factory']($driver, $options);
+            $cache = $app['cache_factory']($driver, $options);
             $cache->setNamespace($namespace);
 
             return $cache;
