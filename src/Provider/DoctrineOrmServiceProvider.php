@@ -2,6 +2,7 @@
 
 namespace Sergiors\Silex\Provider;
 
+use Doctrine\ORM\Mapping\Driver\XmlDriver;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Doctrine\ORM\Configuration;
@@ -39,7 +40,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
             if (!isset($app['ems.options'])) {
                 $app['ems.options'] = [
-                    'default' => isset($app['orm.options']) ? $app['orm.options'] : [],
+                    'default' => $app['orm.options'] ?? [],
                 ];
             }
 
@@ -48,7 +49,9 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             }, $app['ems.options']);
 
             if (!isset($app['ems.default'])) {
-                $app['ems.default'] = array_keys(array_slice($app['ems.options'], 0, 1))[0];
+                $app['ems.default'] = array_keys(
+                    array_slice($app['ems.options'], 0, 1)
+                )[0];
             }
         });
 
@@ -57,11 +60,9 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
             $container = new Container();
             foreach ($app['ems.options'] as $name => $options) {
-                if ($app['ems.default'] === $name) {
-                    $config = $app['orm.config'];
-                } else {
-                    $config = $app['ems.config'][$name];
-                }
+                $config = $app['ems.default'] === $name
+                    ? $app['orm.config']
+                    : $app['ems.config'][$name];
 
                 $connection = $app['dbs'][$options['connection']];
                 $manager = $app['dbs.event_manager'][$options['connection']];
@@ -99,9 +100,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
         $app['orm.cache.factory'] = $app->protect(function ($type, $options) use ($app) {
             $type = $type.'_cache_driver';
 
-            if (!isset($options[$type])) {
-                $options[$type] = 'array';
-            }
+            $options[$type] = $options[$type] ?? 'array';
 
             if (!is_array($options[$type])) {
                 $options[$type] = [
@@ -110,9 +109,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             }
 
             $driver = $options[$type]['driver'];
-            $namespace = isset($options[$type]['namespace'])
-                ? $options[$type]['namespace']
-                : null;
+            $namespace = $options[$type]['namespace'] ?? null;
 
             $cache = $app['cache_factory']($driver, $options);
             $cache->setNamespace($namespace);
@@ -128,26 +125,28 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
                     throw new \InvalidArgumentException();
                 }
 
+                $path = $mapping['path'];
+                $namespace = $mapping['namespace'];
+
                 switch ($mapping['type']) {
                     case 'annotation':
-                        $useSimpleAnnotationReader = isset($mapping['use_simple_annotation_reader'])
-                            ? $mapping['use_simple_annotation_reader']
-                            : true;
-
-                        $driver = $config->newDefaultAnnotationDriver(
-                            $mapping['path'],
-                            $useSimpleAnnotationReader
+                        $annotationDriver = $config->newDefaultAnnotationDriver(
+                            $path,
+                            $mapping['use_simple_annotation_reader'] ?? true
                         );
+
+                        $chain->addDriver($annotationDriver, $namespace);
                         break;
                     case 'yml':
-                        $driver = new YamlDriver($mapping['path']);
+                        $chain->addDriver(new YamlDriver($path), $namespace);
+                        break;
+                    case 'xml':
+                        $chain->addDriver(new XmlDriver($path), $namespace);
                         break;
                     default:
                         throw new \InvalidArgumentException();
                         break;
                 }
-
-                $chain->addDriver($driver, $mapping['namespace']);
             }
 
             return $chain;
