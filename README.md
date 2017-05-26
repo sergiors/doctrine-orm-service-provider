@@ -5,7 +5,7 @@ Doctrine Orm Service Provider
 Install
 -------
 ```bash
-composer install sergiors/doctrine-orm-service-provider "dev-master"
+composer require sergiors/doctrine-orm-service-provider "dev-master"
 ```
 
 How to use
