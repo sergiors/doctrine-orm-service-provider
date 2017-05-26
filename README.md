@@ -1,6 +1,6 @@
 Doctrine Orm Service Provider
 -----------------------------
-[![Build Status](https://travis-ci.org/sergiors/doctrine-orm-service-provider.svg?branch=master)](https://travis-ci.org/inbep/doctrine-orm-service-provider)
+[![Build Status](https://travis-ci.org/sergiors/doctrine-orm-service-provider.svg?branch=master)](https://travis-ci.org/sergiors/doctrine-orm-service-provider)
 
 Install
 -------
