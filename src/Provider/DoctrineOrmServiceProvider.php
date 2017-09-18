@@ -9,6 +9,7 @@ use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\Driver\YamlDriver;
 use Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain;
+use Doctrine\ORM\Tools\ResolveTargetEntityListener;
 
 /**
  * @author Sérgio Rafael Siqueira <sergio@inbep.com.br>
@@ -66,6 +67,12 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
                 $connection = $app['dbs'][$options['connection']];
                 $manager = $app['dbs.event_manager'][$options['connection']];
+
+                if ($targetEntities = $options['resolve_target_entities'] ?? []) {
+                    $manager->addEventSubscriber(
+                        $app['orm.resolve_target_entity']($targetEntities)
+                    );
+                }
 
                 $container[$name] = function () use ($connection, $config, $manager) {
                     return EntityManager::create($connection, $config, $manager);
@@ -150,6 +157,16 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             }
 
             return $chain;
+        });
+
+        $app['orm.resolve_target_entity'] = $app->protect(function (array $targetEntities) {
+            $rtel = new ResolveTargetEntityListener();
+
+            foreach ($targetEntities as $originalEntity => $newEntity) {
+               $rtel->addResolveTargetEntity($originalEntity, $newEntity, []);
+            }
+
+            return $rtel;
         });
 
         $app['orm.proxy_dir'] = null;
