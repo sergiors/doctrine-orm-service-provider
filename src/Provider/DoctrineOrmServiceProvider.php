@@ -1,36 +1,36 @@
 <?php
 
-namespace Sergiors\Silex\Provider;
+namespace Sergiors\Pimple\Provider;
 
-use Doctrine\ORM\Mapping\Driver\XmlDriver;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Mapping\Driver\YamlDriver;
 use Doctrine\Common\Persistence\Mapping\Driver\MappingDriverChain;
 use Doctrine\ORM\Tools\ResolveTargetEntityListener;
+use Doctrine\ORM\Mapping\Driver\YamlDriver;
+use Doctrine\ORM\Mapping\Driver\XmlDriver;
 
 /**
  * @author Sérgio Rafael Siqueira <sergio@inbep.com.br>
  */
 class DoctrineOrmServiceProvider implements ServiceProviderInterface
 {
-    public function register(Container $app)
+    public function register(Container $container)
     {
-        if (!isset($app['dbs'])) {
+        if (!isset($container['dbs'])) {
             throw new \LogicException(
                 'You must register the DoctrineServiceProvider to use the DoctrineOrmServiceProvider.'
             );
         }
 
-        if (!isset($app['caches'])) {
+        if (!isset($container['caches'])) {
             throw new \LogicException(
                 'You must register the DoctrineCacheServiceProvider to use the DoctrineOrmServiceProvider.'
             );
         }
 
-        $app['ems.options.initializer'] = $app->protect(function () use ($app) {
+        $container['ems.options.initializer'] = $container->protect(function () use ($container) {
             static $initialized = false;
 
             if ($initialized) {
@@ -39,73 +39,74 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
 
             $initialized = true;
 
-            if (!isset($app['ems.options'])) {
-                $app['ems.options'] = [
-                    'default' => $app['orm.options'] ?? [],
+            if (!isset($container['ems.options'])) {
+                $container['ems.options'] = [
+                    'default' => $container['orm.options'] ?? [],
                 ];
             }
 
-            $app['ems.options'] = array_map(function ($options) use ($app) {
-                return array_replace($app['orm.default_options'], $options);
-            }, $app['ems.options']);
+            $container['ems.options'] = array_map(function ($options) use ($container) {
+                return array_replace($container['orm.default_options'], $options);
+            }, $container['ems.options']);
 
-            if (!isset($app['ems.default'])) {
-                $app['ems.default'] = array_keys(
-                    array_slice($app['ems.options'], 0, 1)
+            if (!isset($container['ems.default'])) {
+                $container['ems.default'] = array_keys(
+                    array_slice($container['ems.options'], 0, 1)
                 )[0];
             }
         });
 
-        $app['ems'] = function (Container $app) {
-            $app['ems.options.initializer']();
+        $container['ems'] = function (Container $container) {
+            $container['ems.options.initializer']();
 
-            $container = new Container();
-            foreach ($app['ems.options'] as $name => $options) {
-                $config = $app['ems.default'] === $name
-                    ? $app['orm.config']
-                    : $app['ems.config'][$name];
+            $ems = new Container();
+            foreach ($container['ems.options'] as $name => $options) {
+                $config = $container['ems.default'] === $name
+                    ? $container['orm.config']
+                    : $container['ems.config'][$name];
 
-                $connection = $app['dbs'][$options['connection']];
-                $manager = $app['dbs.event_manager'][$options['connection']];
+                $connection = $container['dbs'][$options['connection']];
+                $manager = $container['dbs.event_manager'][$options['connection']];
 
                 if ($targetEntities = $options['resolve_target_entities'] ?? []) {
                     $manager->addEventSubscriber(
-                        $app['orm.resolve_target_entity']($targetEntities)
+                        $container['orm.resolve_target_entity']($targetEntities)
                     );
                 }
 
-                $container[$name] = function () use ($connection, $config, $manager) {
+                $ems[$name] = function () use ($connection, $config, $manager) {
                     return EntityManager::create($connection, $config, $manager);
                 };
             }
 
-            return $container;
+            return $ems;
         };
 
-        $app['ems.config'] = function (Container $app) {
-            $app['ems.options.initializer']();
+        $container['ems.config'] = function (Container $container) {
+            $container['ems.options.initializer']();
 
-            $container = new Container();
-            foreach ($app['ems.options'] as $name => $options) {
+            $configs = new Container();
+            foreach ($container['ems.options'] as $name => $options) {
                 $config = new Configuration();
-                $config->setProxyDir($app['orm.proxy_dir']);
-                $config->setProxyNamespace($app['orm.proxy_namespace']);
-                $config->setAutoGenerateProxyClasses($app['orm.auto_generate_proxy_classes']);
-                $config->setCustomStringFunctions($app['orm.custom_functions_string']);
-                $config->setCustomNumericFunctions($app['orm.custom_functions_numeric']);
-                $config->setCustomDatetimeFunctions($app['orm.custom_functions_datetime']);
-                $config->setMetadataCacheImpl($app['orm.cache.factory']('metadata', $options));
-                $config->setQueryCacheImpl($app['orm.cache.factory']('query', $options));
-                $config->setResultCacheImpl($app['orm.cache.factory']('result', $options));
-                $config->setMetadataDriverImpl($app['orm.mapping.chain']($config, $options['mappings']));
-                $container[$name] = $config;
+                $config->setProxyDir($container['orm.proxy_dir']);
+                $config->setProxyNamespace($container['orm.proxy_namespace']);
+                $config->setAutoGenerateProxyClasses($container['orm.auto_generate_proxy_classes']);
+                $config->setCustomStringFunctions($container['orm.custom_functions_string']);
+                $config->setCustomNumericFunctions($container['orm.custom_functions_numeric']);
+                $config->setCustomDatetimeFunctions($container['orm.custom_functions_datetime']);
+                $config->setMetadataCacheImpl($container['orm.cache.factory']('metadata', $options));
+                $config->setQueryCacheImpl($container['orm.cache.factory']('query', $options));
+                $config->setResultCacheImpl($container['orm.cache.factory']('result', $options));
+                $config->setMetadataDriverImpl($container['orm.mapping.chain']($config, $options['mappings']));
+                
+                $configs[$name] = $config;
             }
 
-            return $container;
+            return $configs;
         };
 
-        $app['orm.cache.factory'] = $app->protect(function ($type, $options) use ($app) {
-            $type = $type.'_cache_driver';
+        $container['orm.cache.factory'] = $container->protect(function ($type, $options) use ($container) {
+            $type = $type . '_cache_driver';
 
             $options[$type] = $options[$type] ?? 'array';
 
@@ -118,13 +119,13 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             $driver = $options[$type]['driver'];
             $namespace = $options[$type]['namespace'] ?? null;
 
-            $cache = $app['cache_factory']($driver, $options);
+            $cache = $container['cache_factory']($driver, $options);
             $cache->setNamespace($namespace);
 
             return $cache;
         });
 
-        $app['orm.mapping.chain'] = $app->protect(function (Configuration $config, array $mappings) {
+        $container['orm.mapping.chain'] = $container->protect(function (Configuration $config, array $mappings) {
             $chain = new MappingDriverChain();
 
             foreach ($mappings as $mapping) {
@@ -159,7 +160,7 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             return $chain;
         });
 
-        $app['orm.resolve_target_entity'] = $app->protect(function (array $targetEntities) {
+        $container['orm.resolve_target_entity'] = $container->protect(function (array $targetEntities) {
             $rtel = new ResolveTargetEntityListener();
 
             foreach ($targetEntities as $originalEntity => $newEntity) {
@@ -169,28 +170,28 @@ class DoctrineOrmServiceProvider implements ServiceProviderInterface
             return $rtel;
         });
 
-        $app['orm.proxy_dir'] = null;
-        $app['orm.proxy_namespace'] = 'Proxy';
-        $app['orm.auto_generate_proxy_classes'] = true;
-        $app['orm.custom_functions_string'] = [];
-        $app['orm.custom_functions_numeric'] = [];
-        $app['orm.custom_functions_datetime'] = [];
-        $app['orm.default_options'] = [
+        $container['orm.proxy_dir'] = null;
+        $container['orm.proxy_namespace'] = 'Proxy';
+        $container['orm.auto_generate_proxy_classes'] = true;
+        $container['orm.custom_functions_string'] = [];
+        $container['orm.custom_functions_numeric'] = [];
+        $container['orm.custom_functions_datetime'] = [];
+        $container['orm.default_options'] = [
             'connection' => 'default',
             'mappings' => [],
         ];
 
         // shortcuts for the "first" ORM
-        $app['orm'] = function (Container $app) {
-            $ems = $app['ems'];
+        $container['orm'] = function (Container $container) {
+            $ems = $container['ems'];
 
-            return $ems[$app['ems.default']];
+            return $ems[$container['ems.default']];
         };
 
-        $app['orm.config'] = function (Container $app) {
-            $ems = $app['ems.config'];
+        $container['orm.config'] = function (Container $container) {
+            $ems = $container['ems.config'];
 
-            return $ems[$app['ems.default']];
+            return $ems[$container['ems.default']];
         };
     }
 }

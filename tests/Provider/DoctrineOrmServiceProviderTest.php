@@ -1,13 +1,13 @@
 <?php
 
-namespace Sergiors\Silex\Tests\Provider;
+namespace Sergiors\Pimple\Tests\Provider;
 
 use Pimple\Container;
 use Silex\Provider\DoctrineServiceProvider;
-use Sergiors\Silex\Provider\DoctrineCacheServiceProvider;
-use Sergiors\Silex\Provider\DoctrineOrmServiceProvider;
+use Sergiors\Pimple\Provider\DoctrineCacheServiceProvider;
+use Sergiors\Pimple\Provider\DoctrineOrmServiceProvider;
 
-class DoctrineOrmServiceProviderTest extends \PHPUnit_Framework_TestCase
+class DoctrineOrmServiceProviderTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @test

@@ -13,8 +13,8 @@ How to use
 Something like this
 ```php
 use Silex\Provider\DoctrineServiceProvider;
-use Sergiors\Silex\Provider\DoctrineOrmServiceProvider;
-use Sergiors\Silex\Provider\DoctrineCacheServiceProvider;
+use Sergiors\Pimple\Provider\DoctrineOrmServiceProvider;
+use Sergiors\Pimple\Provider\DoctrineCacheServiceProvider;
 
 $app->register(new DoctrineServiceProvider(), [
     // your db config
